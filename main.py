@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import os
+import datetime
 
 def initialize_grid(size):
     """Initialize a 100x100 grid with random 0s and 1s."""
@@ -33,14 +34,20 @@ def next_generation(grid):
     return new_grid
 
 def save_grid_as_png(grid, generation, output_dir):
-    """Save the grid as a PNG image."""
-    img = Image.fromarray((grid * 255).astype(np.uint8))
+    """Save the grid as a PNG image with a transparent background."""
+    img = Image.new("RGBA", grid.shape, (0, 0, 0, 0))  
+    for x in range(grid.shape[0]):
+        for y in range(grid.shape[1]):
+            if grid[x, y] == 1:
+                img.putpixel((y, x), (255, 255, 255, 255))  
     img.save(os.path.join(output_dir, f"generation_{generation:04d}.png"))
 
 def main():
     size = 100
     generations = 100
-    output_dir = "output"
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = os.path.join("output", f"sequence_{timestamp}")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
