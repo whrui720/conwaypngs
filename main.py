@@ -33,18 +33,38 @@ def next_generation(grid):
                 new_grid[x, y] = 1
     return new_grid
 
-def save_grid_as_png(grid, generation, output_dir):
-    """Save the grid as a PNG image with a transparent background."""
-    img = Image.new("RGBA", grid.shape, (0, 0, 0, 0))  
+def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920):
+    """Save the grid as a PNG image with a transparent background and radial opacity."""
+    scale = upscale_resolution // grid.shape[0]  # Calculate the scale factor
+    upscale_size = (grid.shape[1] * scale, grid.shape[0] * scale)
+    img = Image.new("RGBA", upscale_size, (0, 0, 0, 0))  # Transparent background
+
+    # Calculate the center of the grid
+    center_x, center_y = grid.shape[0] // 2, grid.shape[1] // 2
+    max_distance = np.sqrt(center_x**2 + center_y**2)  # Maximum possible distance from the center
+
     for x in range(grid.shape[0]):
         for y in range(grid.shape[1]):
             if grid[x, y] == 1:
-                img.putpixel((y, x), (255, 255, 255, 255))  
-    img.save(os.path.join(output_dir, f"generation_{generation:04d}.png"))
+                # Calculate the distance from the center
+                distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
+                # Avoid division by zero
+                if max_distance > 0:
+                    # Adjust the opacity to make the gradient more obvious
+                    opacity = int(255 * ((1 - distance / max_distance) ** 1.5))  # Squared for stronger gradient
+                else:
+                    opacity = 255  # Full opacity if max_distance is zero
+                # Ensure opacity is within valid bounds
+                opacity = max(0, min(255, opacity))
+                # Fill the entire cell block with the same opacity
+                for dx in range(scale):
+                    for dy in range(scale):
+                        img.putpixel((y * scale + dy, x * scale + dx), (255, 255, 255, opacity))  # White with uniform opacity
+    img.save(os.path.join(output_dir, f"file-{generation}.png"))
 
 def main():
-    size = 100
-    generations = 100
+    size = 20
+    generations = 1
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join("output", f"sequence_{timestamp}")
