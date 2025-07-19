@@ -2,10 +2,18 @@ import numpy as np
 from PIL import Image
 import os
 import datetime
+import csv
 
 def initialize_grid(size):
-    """Initialize a 100x100 grid with random 0s and 1s."""
+    """Initialize a size x size grid with random 0s and 1s."""
     return np.random.choice([0, 1], size=(size, size))
+
+def load_grid_from_csv(filepath):
+    """Load a grid from a CSV file."""
+    with open(filepath, 'r') as file:
+        reader = csv.reader(file)
+        grid = [list(map(int, row)) for row in reader]
+    return np.array(grid)
 
 def count_neighbors(grid, x, y):
     """Count the number of alive neighbors for a cell."""
@@ -63,8 +71,8 @@ def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920):
     img.save(os.path.join(output_dir, f"file-{generation}.png"))
 
 def main():
-    size = 20
-    generations = 1
+    size = 25
+    generations = 8
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join("output", f"sequence_{timestamp}")
@@ -72,7 +80,13 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    grid = initialize_grid(size)
+    # Choose between random initialization or loading from a CSV
+    use_csv = input("Load grid from CSV? (y/n): ").strip().lower() == 'y'
+    if use_csv:
+        csv_path = input("Enter the path to the CSV file: ").strip()
+        grid = load_grid_from_csv(csv_path)
+    else:
+        grid = initialize_grid(size)
 
     for generation in range(generations):
         save_grid_as_png(grid, generation, output_dir)
