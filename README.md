@@ -1,6 +1,6 @@
 # Conway's Game of Life PNG Generator
 
-This project generates a sequence of PNG images representing the evolution of Conway's Game of Life on a 100x100 grid.
+This project generates a sequence of PNG images representing the evolution of Conway's Game of Life on predefined grid. Initializations can be set in csv format; one caveat is that additional padding of 0's (empty/dead cells) must exist if that specific cell, at any step, is alive. 
 
 ## How to Run
 
