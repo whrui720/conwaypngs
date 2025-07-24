@@ -30,19 +30,23 @@ def count_neighbors(grid, x, y):
     return count
 
 def next_generation(grid):
-    """Compute the next generation of the grid."""
+    """Compute the next generation of the grid based on Conway's Game of Life rules."""
     new_grid = np.zeros_like(grid)
     for x in range(grid.shape[0]):
         for y in range(grid.shape[1]):
             alive_neighbors = count_neighbors(grid, x, y)
-            if grid[x, y] == 1 and alive_neighbors in [2, 3]:
-                new_grid[x, y] = 1
-            elif grid[x, y] == 0 and alive_neighbors == 3:
-                new_grid[x, y] = 1
+            if grid[x, y] == 1:
+                # A live cell survives with 2 or 3 neighbors, otherwise it dies
+                if alive_neighbors in [2, 3]:
+                    new_grid[x, y] = 1
+            elif grid[x, y] == 0:
+                # A dead cell becomes alive if it has exactly 3 neighbors
+                if alive_neighbors == 3:
+                    new_grid[x, y] = 1
     return new_grid
 
-def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920):
-    """Save the grid as a PNG image with a transparent background and radial opacity."""
+def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920, use_opacity=True):
+    """Save the grid as a PNG image with a transparent background and optional radial opacity."""
     scale = upscale_resolution // grid.shape[0]  # Calculate the scale factor
     upscale_size = (grid.shape[1] * scale, grid.shape[0] * scale)
     img = Image.new("RGBA", upscale_size, (0, 0, 0, 0))  # Transparent background
@@ -56,12 +60,11 @@ def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920):
             if grid[x, y] == 1:
                 # Calculate the distance from the center
                 distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
-                # Avoid division by zero
-                if max_distance > 0:
-                    # Adjust the opacity to make the gradient more obvious
+                # Determine opacity
+                if use_opacity and max_distance > 0:
                     opacity = int(255 * ((1 - distance / max_distance) ** 1.5))  # Squared for stronger gradient
                 else:
-                    opacity = 255  # Full opacity if max_distance is zero
+                    opacity = 255  # Full opacity if opacity is disabled or max_distance is zero
                 # Ensure opacity is within valid bounds
                 opacity = max(0, min(255, opacity))
                 # Fill the entire cell block with the same opacity
@@ -71,8 +74,8 @@ def save_grid_as_png(grid, generation, output_dir, upscale_resolution=1920):
     img.save(os.path.join(output_dir, f"file-{generation}.png"))
 
 def main():
-    size = 25
-    generations = 8
+    size = 10
+    generations = 42
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join("output", f"sequence_{timestamp}")
@@ -88,8 +91,11 @@ def main():
     else:
         grid = initialize_grid(size)
 
+    # Ask if radial opacity should be applied
+    use_opacity = input("Apply radial opacity? (y/n): ").strip().lower() == 'y'
+
     for generation in range(generations):
-        save_grid_as_png(grid, generation, output_dir)
+        save_grid_as_png(grid, generation, output_dir, use_opacity=use_opacity)
         grid = next_generation(grid)
 
 if __name__ == "__main__":
